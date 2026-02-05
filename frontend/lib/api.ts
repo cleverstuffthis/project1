@@ -22,7 +22,7 @@ const baseUrl =
   typeof window === "undefined"
     ? process.env.CATALOG_SERVICE_INTERNAL_URL ??
       process.env.NEXT_PUBLIC_API_BASE_URL ??
-      "http://localhost:8080"
+      "http://catalog-service:8080"
     : "";
 
 function buildProductImage(product: Product) {
