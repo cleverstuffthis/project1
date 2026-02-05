@@ -5,7 +5,9 @@ import Image from "next/image";
 import { useAuth } from "@/components/auth-context";
 import { Category, Product } from "@/lib/api";
 
-const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const apiBase =
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  (typeof window !== "undefined" && window.location.hostname !== "localhost" ? "" : "http://localhost:8080");
 
 type EditableProduct = Product & {
   stock?: number;
