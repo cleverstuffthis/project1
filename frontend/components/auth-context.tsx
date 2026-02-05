@@ -66,10 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser({ username, role: "admin" });
           return true;
         }
+        if (role === "admin") {
+          return false;
+        }
         const stored = window.localStorage.getItem(USERS_KEY);
         const users = stored ? (JSON.parse(stored) as Record<string, { password: string }>) : {};
         if (users[username]?.password === password) {
-          setUser({ username, role });
+          setUser({ username, role: "user" });
           return true;
         }
         return false;

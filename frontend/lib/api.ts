@@ -201,7 +201,7 @@ const fallbackProducts: Product[] = [
 
 async function fetchJson<T>(path: string, fallback: T): Promise<T> {
   try {
-    const response = await fetch(`${baseUrl}${path}`, { next: { revalidate: 30 } });
+    const response = await fetch(`${baseUrl}${path}`, { cache: "no-store" });
     if (!response.ok) {
       return fallback;
     }

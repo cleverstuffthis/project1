@@ -10,11 +10,10 @@ export default function AccountClient() {
   const router = useRouter();
   const { user, register, login } = useAuth();
   const initialMode = searchParams.get("mode") === "register" ? "register" : "login";
-  const initialRole = (searchParams.get("role") ?? "user") as "user" | "admin";
   const [mode, setMode] = useState<"login" | "register">(initialMode);
-  const [role, setRole] = useState<"user" | "admin">(initialRole);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const adminRequested = searchParams.get("role") === "admin";
   const orders = useMemo(() => (user ? getOrdersForUser(user.username) : []), [user]);
 
   if (!user) {
@@ -48,18 +47,11 @@ export default function AccountClient() {
                   className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
                 />
               </label>
-              {mode === "login" && (
-                <label className="text-sm text-white/60">
-                  Role
-                  <select
-                    value={role}
-                    onChange={(event) => setRole(event.target.value as "user" | "admin")}
-                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-                  >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </label>
+              {mode === "login" && adminRequested && (
+                <p className="text-sm text-white/60">
+                  Admin access requires logging in with the <span className="font-semibold text-white">admin/admin</span>{" "}
+                  account.
+                </p>
               )}
             </div>
             <button
@@ -70,8 +62,8 @@ export default function AccountClient() {
                 if (mode === "register") {
                   register(username, password);
                 } else {
-                  const success = login(username, password, role);
-                  if (success && role === "admin") {
+                  const success = login(username, password, "user");
+                  if (success && username === "admin") {
                     router.push("/admin");
                   }
                 }
