@@ -53,6 +53,10 @@ public class Product {
     return sku;
   }
 
+  public void setSku(String sku) {
+    this.sku = sku;
+  }
+
   public String getName() {
     return name;
   }
@@ -83,5 +87,37 @@ public class Product {
 
   public boolean isFeatured() {
     return featured;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public void setCategory(String category) {
+    this.category = category;
+  }
+
+  public void setTier(String tier) {
+    this.tier = tier;
+  }
+
+  public void setPrice(Integer price) {
+    this.price = price;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
+  }
+
+  public void setSummary(String summary) {
+    this.summary = summary;
+  }
+
+  public void setEbike(boolean ebike) {
+    this.ebike = ebike;
+  }
+
+  public void setFeatured(boolean featured) {
+    this.featured = featured;
   }
 }

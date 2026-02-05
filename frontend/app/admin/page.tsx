@@ -3,87 +3,52 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/components/auth-context";
-import { getAllProducts, Product } from "@/lib/api";
+import { Category, getAllProducts, getCategories, Product } from "@/lib/api";
 
-const ADMIN_DATA_KEY = "summit-ride-admin-data";
+const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
-type AdminProduct = Product & {
-  stock: number;
-  details: string;
-  category: string;
+type EditableProduct = Product & {
+  stock?: number;
+  details?: string;
 };
-
-type AdminCategory = {
-  id: string;
-  name: string;
-  slug: string;
-};
-
-type AdminData = {
-  categories: AdminCategory[];
-  products: Record<string, AdminProduct>;
-};
-
-const emptyData: AdminData = { categories: [], products: {} };
 
 export default function AdminPage() {
   const { user } = useAuth();
-  const [data, setData] = useState<AdminData>(emptyData);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<EditableProduct[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [newCategory, setNewCategory] = useState({ name: "", slug: "" });
+  const [newCategory, setNewCategory] = useState({ name: "", slug: "", description: "" });
   const [newProduct, setNewProduct] = useState({
     category: "",
     name: "",
     sku: "",
+    tier: "",
     price: "",
-    stock: "",
     imageUrl: "",
     summary: "",
-    details: ""
+    ebike: false,
+    featured: false
   });
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(ADMIN_DATA_KEY);
-    if (stored) {
-      try {
-        setData(JSON.parse(stored) as AdminData);
-        return;
-      } catch {
-        setData(emptyData);
-      }
-    }
-
-    getAllProducts().then((products) => {
-      const defaultCategories: AdminCategory[] = Array.from(
-        new Set(products.map((product) => product.category))
-      ).map((category) => ({ id: category, name: category, slug: category }));
-
-      const productMap = products.reduce<Record<string, AdminProduct>>((acc, product) => {
-        acc[product.sku] = {
-          ...product,
-          stock: 12,
-          details: "Premium frame, tuned suspension, and ride-ready component package.",
-          category: product.category
-        };
-        return acc;
-      }, {});
-
-      setData({ categories: defaultCategories, products: productMap });
+    Promise.all([getCategories(), getAllProducts()]).then(([categoryData, productData]) => {
+      setCategories(categoryData);
+      setProducts(productData);
     });
   }, []);
 
-  useEffect(() => {
-    window.localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(data));
-  }, [data]);
-
   const productsByCategory = useMemo(() => {
-    return data.categories.reduce<Record<string, AdminProduct[]>>((acc, category) => {
-      acc[category.slug] = Object.values(data.products).filter(
-        (product) => product.category === category.slug
-      );
+    return categories.reduce<Record<string, EditableProduct[]>>((acc, category) => {
+      acc[category.slug] = products.filter((product) => product.category === category.slug);
       return acc;
     }, {});
-  }, [data]);
+  }, [categories, products]);
+
+  const refreshData = async () => {
+    const [categoryData, productData] = await Promise.all([getCategories(), getAllProducts()]);
+    setCategories(categoryData);
+    setProducts(productData);
+  };
 
   if (!user || user.role !== "admin") {
     return (
@@ -111,33 +76,44 @@ export default function AdminPage() {
 
       <div className="card-surface p-6">
         <h2 className="text-lg font-semibold">Add new category</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <input
-            value={newCategory.name}
-            onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
-            placeholder="Category name"
-            className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-          />
-          <input
-            value={newCategory.slug}
-            onChange={(event) => setNewCategory({ ...newCategory, slug: event.target.value })}
-            placeholder="slug"
-            className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-          />
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <label className="text-sm text-white/60">
+            Category name
+            <input
+              value={newCategory.name}
+              onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+            />
+          </label>
+          <label className="text-sm text-white/60">
+            Slug
+            <input
+              value={newCategory.slug}
+              onChange={(event) => setNewCategory({ ...newCategory, slug: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+            />
+          </label>
+          <label className="text-sm text-white/60">
+            Description
+            <input
+              value={newCategory.description}
+              onChange={(event) => setNewCategory({ ...newCategory, description: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+            />
+          </label>
         </div>
         <button
-          onClick={() => {
-            if (!newCategory.name || !newCategory.slug) {
+          onClick={async () => {
+            if (!newCategory.name || !newCategory.slug || !newCategory.description) {
               return;
             }
-            setData((prev) => ({
-              ...prev,
-              categories: [
-                ...prev.categories,
-                { id: newCategory.slug, name: newCategory.name, slug: newCategory.slug }
-              ]
-            }));
-            setNewCategory({ name: "", slug: "" });
+            await fetch(`${apiBase}/api/categories`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(newCategory)
+            });
+            setNewCategory({ name: "", slug: "", description: "" });
+            await refreshData();
           }}
           className="mt-4 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-950"
         >
@@ -147,98 +123,125 @@ export default function AdminPage() {
 
       <div className="card-surface p-6">
         <h2 className="text-lg font-semibold">Add new product</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <select
-            value={newProduct.category}
-            onChange={(event) => setNewProduct({ ...newProduct, category: event.target.value })}
-            className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-          >
-            <option value="">Select category</option>
-            {data.categories.map((category) => (
-              <option key={category.slug} value={category.slug}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <input
-            value={newProduct.name}
-            onChange={(event) => setNewProduct({ ...newProduct, name: event.target.value })}
-            placeholder="Product name"
-            className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-          />
-          <input
-            value={newProduct.sku}
-            onChange={(event) => setNewProduct({ ...newProduct, sku: event.target.value })}
-            placeholder="SKU"
-            className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-          />
-          <input
-            value={newProduct.price}
-            onChange={(event) => setNewProduct({ ...newProduct, price: event.target.value })}
-            placeholder="Price"
-            className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-          />
-          <input
-            value={newProduct.stock}
-            onChange={(event) => setNewProduct({ ...newProduct, stock: event.target.value })}
-            placeholder="Stock"
-            className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-          />
-          <input
-            value={newProduct.imageUrl}
-            onChange={(event) => setNewProduct({ ...newProduct, imageUrl: event.target.value })}
-            placeholder="Image URL"
-            className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-          />
-          <input
-            value={newProduct.summary}
-            onChange={(event) => setNewProduct({ ...newProduct, summary: event.target.value })}
-            placeholder="Summary"
-            className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-          />
-          <textarea
-            value={newProduct.details}
-            onChange={(event) => setNewProduct({ ...newProduct, details: event.target.value })}
-            placeholder="Details"
-            className="md:col-span-2 h-24 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-          />
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <label className="text-sm text-white/60">
+            Category
+            <select
+              value={newProduct.category}
+              onChange={(event) => setNewProduct({ ...newProduct, category: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+            >
+              <option value="">Select category</option>
+              {categories.map((category) => (
+                <option key={category.slug} value={category.slug}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm text-white/60">
+            Name
+            <input
+              value={newProduct.name}
+              onChange={(event) => setNewProduct({ ...newProduct, name: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+            />
+          </label>
+          <label className="text-sm text-white/60">
+            SKU
+            <input
+              value={newProduct.sku}
+              onChange={(event) => setNewProduct({ ...newProduct, sku: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+            />
+          </label>
+          <label className="text-sm text-white/60">
+            Tier
+            <input
+              value={newProduct.tier}
+              onChange={(event) => setNewProduct({ ...newProduct, tier: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+            />
+          </label>
+          <label className="text-sm text-white/60">
+            Price
+            <input
+              value={newProduct.price}
+              onChange={(event) => setNewProduct({ ...newProduct, price: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+            />
+          </label>
+          <label className="text-sm text-white/60">
+            Image URL
+            <input
+              value={newProduct.imageUrl}
+              onChange={(event) => setNewProduct({ ...newProduct, imageUrl: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+            />
+          </label>
+          <label className="text-sm text-white/60 md:col-span-3">
+            Summary
+            <input
+              value={newProduct.summary}
+              onChange={(event) => setNewProduct({ ...newProduct, summary: event.target.value })}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+            />
+          </label>
+          <label className="text-sm text-white/60">
+            e-MTB
+            <input
+              type="checkbox"
+              checked={newProduct.ebike}
+              onChange={(event) => setNewProduct({ ...newProduct, ebike: event.target.checked })}
+              className="ml-3"
+            />
+          </label>
+          <label className="text-sm text-white/60">
+            Featured
+            <input
+              type="checkbox"
+              checked={newProduct.featured}
+              onChange={(event) => setNewProduct({ ...newProduct, featured: event.target.checked })}
+              className="ml-3"
+            />
+          </label>
         </div>
         <button
-          onClick={() => {
-            if (!newProduct.category || !newProduct.name || !newProduct.sku) {
+          onClick={async () => {
+            if (
+              !newProduct.category ||
+              !newProduct.name ||
+              !newProduct.sku ||
+              !newProduct.tier ||
+              !newProduct.imageUrl ||
+              !newProduct.summary
+            ) {
               return;
             }
-            const price = Number(newProduct.price) || 0;
-            const stock = Number(newProduct.stock) || 0;
-            setData((prev) => ({
-              ...prev,
-              products: {
-                ...prev.products,
-                [newProduct.sku]: {
-                  id: Object.keys(prev.products).length + 100,
-                  sku: newProduct.sku,
-                  name: newProduct.name,
-                  category: newProduct.category,
-                  tier: "Custom",
-                  price,
-                  imageUrl: newProduct.imageUrl,
-                  summary: newProduct.summary,
-                  ebike: false,
-                  stock,
-                  details: newProduct.details
-                }
-              }
-            }));
+            await fetch(`${apiBase}/api/products`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                ...newProduct,
+                price: Number(newProduct.price) || 0,
+                imageUrl: newProduct.imageUrl || "",
+                summary: newProduct.summary || "",
+                ebike: newProduct.ebike,
+                featured: newProduct.featured
+              })
+            });
             setNewProduct({
               category: "",
               name: "",
               sku: "",
+              tier: "",
               price: "",
-              stock: "",
               imageUrl: "",
               summary: "",
-              details: ""
+              ebike: false,
+              featured: false
             });
+            await refreshData();
           }}
           className="mt-4 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-950"
         >
@@ -247,7 +250,7 @@ export default function AdminPage() {
       </div>
 
       <div className="flex flex-col gap-6">
-        {data.categories.map((category) => (
+        {categories.map((category) => (
           <div key={category.slug} className="card-surface p-6">
             <button
               onClick={() => setExpanded((prev) => ({ ...prev, [category.slug]: !prev[category.slug] }))}
@@ -268,100 +271,145 @@ export default function AdminPage() {
                         <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
                       </div>
                       <div className="grid gap-4 md:grid-cols-2">
-                        <input
-                          value={product.name}
-                          onChange={(event) =>
-                            setData((prev) => ({
-                              ...prev,
-                              products: {
-                                ...prev.products,
-                                [product.sku]: { ...product, name: event.target.value }
-                              }
-                            }))
-                          }
-                          className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-                        />
-                        <input
-                          value={product.sku}
-                          onChange={(event) =>
-                            setData((prev) => ({
-                              ...prev,
-                              products: {
-                                ...prev.products,
-                                [product.sku]: { ...product, sku: event.target.value }
-                              }
-                            }))
-                          }
-                          className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-                        />
-                        <input
-                          value={product.price}
-                          onChange={(event) =>
-                            setData((prev) => ({
-                              ...prev,
-                              products: {
-                                ...prev.products,
-                                [product.sku]: { ...product, price: Number(event.target.value) }
-                              }
-                            }))
-                          }
-                          className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-                        />
-                        <input
-                          value={product.stock}
-                          onChange={(event) =>
-                            setData((prev) => ({
-                              ...prev,
-                              products: {
-                                ...prev.products,
-                                [product.sku]: { ...product, stock: Number(event.target.value) }
-                              }
-                            }))
-                          }
-                          className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-                        />
-                        <input
-                          value={product.imageUrl}
-                          onChange={(event) =>
-                            setData((prev) => ({
-                              ...prev,
-                              products: {
-                                ...prev.products,
-                                [product.sku]: { ...product, imageUrl: event.target.value }
-                              }
-                            }))
-                          }
-                          className="md:col-span-2 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-                        />
-                        <input
-                          value={product.summary}
-                          onChange={(event) =>
-                            setData((prev) => ({
-                              ...prev,
-                              products: {
-                                ...prev.products,
-                                [product.sku]: { ...product, summary: event.target.value }
-                              }
-                            }))
-                          }
-                          className="md:col-span-2 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-                        />
-                        <textarea
-                          value={product.details}
-                          onChange={(event) =>
-                            setData((prev) => ({
-                              ...prev,
-                              products: {
-                                ...prev.products,
-                                [product.sku]: { ...product, details: event.target.value }
-                              }
-                            }))
-                          }
-                          className="md:col-span-2 h-24 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-                        />
+                        <label className="text-sm text-white/60">
+                          Name
+                          <input
+                            value={product.name}
+                            onChange={(event) =>
+                              setProducts((prev) =>
+                                prev.map((entry) =>
+                                  entry.id === product.id ? { ...entry, name: event.target.value } : entry
+                                )
+                              )
+                            }
+                            className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+                          />
+                        </label>
+                        <label className="text-sm text-white/60">
+                          SKU
+                          <input
+                            value={product.sku}
+                            onChange={(event) =>
+                              setProducts((prev) =>
+                                prev.map((entry) =>
+                                  entry.id === product.id ? { ...entry, sku: event.target.value } : entry
+                                )
+                              )
+                            }
+                            className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+                          />
+                        </label>
+                        <label className="text-sm text-white/60">
+                          Tier
+                          <input
+                            value={product.tier}
+                            onChange={(event) =>
+                              setProducts((prev) =>
+                                prev.map((entry) =>
+                                  entry.id === product.id ? { ...entry, tier: event.target.value } : entry
+                                )
+                              )
+                            }
+                            className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+                          />
+                        </label>
+                        <label className="text-sm text-white/60">
+                          Price
+                          <input
+                            value={product.price}
+                            onChange={(event) =>
+                              setProducts((prev) =>
+                                prev.map((entry) =>
+                                  entry.id === product.id
+                                    ? { ...entry, price: Number(event.target.value) }
+                                    : entry
+                                )
+                              )
+                            }
+                            className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+                          />
+                        </label>
+                        <label className="text-sm text-white/60">
+                          Image URL
+                          <input
+                            value={product.imageUrl}
+                            onChange={(event) =>
+                              setProducts((prev) =>
+                                prev.map((entry) =>
+                                  entry.id === product.id ? { ...entry, imageUrl: event.target.value } : entry
+                                )
+                              )
+                            }
+                            className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+                          />
+                        </label>
+                        <label className="text-sm text-white/60">
+                          Summary
+                          <input
+                            value={product.summary}
+                            onChange={(event) =>
+                              setProducts((prev) =>
+                                prev.map((entry) =>
+                                  entry.id === product.id ? { ...entry, summary: event.target.value } : entry
+                                )
+                              )
+                            }
+                            className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
+                          />
+                        </label>
+                        <label className="text-sm text-white/60">
+                          e-MTB
+                          <input
+                            type="checkbox"
+                            checked={product.ebike}
+                            onChange={(event) =>
+                              setProducts((prev) =>
+                                prev.map((entry) =>
+                                  entry.id === product.id ? { ...entry, ebike: event.target.checked } : entry
+                                )
+                              )
+                            }
+                            className="ml-3"
+                          />
+                        </label>
+                        <label className="text-sm text-white/60">
+                          Featured
+                          <input
+                            type="checkbox"
+                            checked={product.featured}
+                            onChange={(event) =>
+                              setProducts((prev) =>
+                                prev.map((entry) =>
+                                  entry.id === product.id ? { ...entry, featured: event.target.checked } : entry
+                                )
+                              )
+                            }
+                            className="ml-3"
+                          />
+                        </label>
                       </div>
                     </div>
-                    <button className="mt-4 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-950">
+                    <button
+                      onClick={async () => {
+                        await fetch(`${apiBase}/api/products/${product.id}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            sku: product.sku,
+                            name: product.name,
+                            category: product.category,
+                            tier: product.tier,
+                            price: product.price,
+                            imageUrl: product.imageUrl,
+                            summary: product.summary,
+                            ebike: product.ebike,
+                            featured: product.featured
+                          })
+                        });
+                        await refreshData();
+                      }}
+                      className="mt-4 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-950"
+                    >
                       Save
                     </button>
                   </div>

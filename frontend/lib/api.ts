@@ -8,6 +8,7 @@ export type Product = {
   imageUrl: string;
   summary: string;
   ebike: boolean;
+  featured: boolean;
 };
 
 export type Category = {
@@ -84,7 +85,7 @@ function buildRiderImage() {
 function withLocalImage(products: Product[]) {
   return products.map((product) => ({
     ...product,
-    imageUrl: buildProductImage(product)
+    imageUrl: product.imageUrl?.trim() ? product.imageUrl : buildProductImage(product)
   }));
 }
 
@@ -157,7 +158,8 @@ const fallbackProducts: Product[] = [
     price: 8990,
     imageUrl: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1200&q=80",
     summary: "Carbon enduro chassis with factory suspension tuning.",
-    ebike: false
+    ebike: false,
+    featured: true
   },
   {
     id: 2,
@@ -168,7 +170,8 @@ const fallbackProducts: Product[] = [
     price: 10990,
     imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
     summary: "Full-power enduro e-MTB with smart torque mapping.",
-    ebike: true
+    ebike: true,
+    featured: true
   },
   {
     id: 3,
@@ -179,7 +182,8 @@ const fallbackProducts: Product[] = [
     price: 8290,
     imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
     summary: "World-cup downhill frame with coil shock setup.",
-    ebike: false
+    ebike: false,
+    featured: false
   },
   {
     id: 4,
@@ -190,7 +194,8 @@ const fallbackProducts: Product[] = [
     price: 7690,
     imageUrl: "https://images.unsplash.com/photo-1471478331149-c72f17e33c73?auto=format&fit=crop&w=1200&q=80",
     summary: "All-day trail bike with climb switch suspension.",
-    ebike: false
+    ebike: false,
+    featured: false
   }
 ];
 
@@ -237,7 +242,7 @@ export function getProduct(id: string) {
     const [override] = applyAdminOverrides([product]);
     return {
       ...override,
-      imageUrl: buildProductImage(override)
+      imageUrl: override.imageUrl?.trim() ? override.imageUrl : buildProductImage(override)
     };
   });
 }
