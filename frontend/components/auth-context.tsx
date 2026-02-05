@@ -12,7 +12,7 @@ export type UserAccount = {
 type AuthContextValue = {
   user: UserAccount | null;
   register: (username: string, password: string) => void;
-  login: (username: string, password: string, role: UserRole) => void;
+  login: (username: string, password: string, role: UserRole) => boolean;
   logout: () => void;
 };
 
@@ -60,17 +60,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       login: (username, password, role) => {
         if (typeof window === "undefined") {
-          return;
+          return false;
         }
         if (username === "admin" && password === "admin") {
           setUser({ username, role: "admin" });
-          return;
+          return true;
         }
         const stored = window.localStorage.getItem(USERS_KEY);
         const users = stored ? (JSON.parse(stored) as Record<string, { password: string }>) : {};
         if (users[username]?.password === password) {
           setUser({ username, role });
+          return true;
         }
+        return false;
       },
       logout: () => {
         setUser(null);

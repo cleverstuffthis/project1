@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 import { getOrdersForUser } from "@/lib/orders";
 
 export default function AccountClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { user, register, login } = useAuth();
   const initialMode = searchParams.get("mode") === "register" ? "register" : "login";
   const initialRole = (searchParams.get("role") ?? "user") as "user" | "admin";
@@ -69,7 +70,10 @@ export default function AccountClient() {
                 if (mode === "register") {
                   register(username, password);
                 } else {
-                  login(username, password, role);
+                  const success = login(username, password, role);
+                  if (success && role === "admin") {
+                    router.push("/admin");
+                  }
                 }
               }}
               className="mt-6 rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:shadow-glow"

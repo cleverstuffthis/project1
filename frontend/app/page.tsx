@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getCategories, getFeaturedProducts } from "@/lib/api";
+import { getCategories, getFeaturedProducts, getHeroImage } from "@/lib/api";
 
 export default async function HomePage() {
-  const [categories, featured] = await Promise.all([
+  const [categories, featured, heroImage] = await Promise.all([
     getCategories(),
-    getFeaturedProducts()
+    getFeaturedProducts(),
+    getHeroImage()
   ]);
 
   return (
@@ -31,7 +32,7 @@ export default async function HomePage() {
         </div>
         <div className="card-surface relative min-h-[320px] overflow-hidden p-6">
           <Image
-            src="https://images.unsplash.com/photo-1508973378893-5e012c2f8e77?auto=format&fit=crop&w=1400&q=80"
+            src={heroImage}
             alt="Enduro rider sending a sunset mountain drop"
             fill
             className="object-cover"
