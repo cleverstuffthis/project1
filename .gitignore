@@ -1,0 +1,16 @@
+# Node
+node_modules
+.next
+out
+
+# Java
+**/target
+**/*.log
+
+# IDE
+.idea
+.vscode
+.DS_Store
+
+# Env
+.env

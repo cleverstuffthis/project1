@@ -1,0 +1,146 @@
+version: "3.9"
+
+services:
+  catalog-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: catalog
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: catalog
+    ports:
+      - "5432:5432"
+    volumes:
+      - catalog-data:/var/lib/postgresql/data
+
+  pricing-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: pricing
+      POSTGRES_USER: pricing
+      POSTGRES_PASSWORD: pricing
+    ports:
+      - "5433:5432"
+    volumes:
+      - pricing-data:/var/lib/postgresql/data
+
+  inventory-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: inventory
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory
+    ports:
+      - "5434:5432"
+    volumes:
+      - inventory-data:/var/lib/postgresql/data
+
+  order-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: orders
+    ports:
+      - "5435:5432"
+    volumes:
+      - order-data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8088:8080"
+
+  opensearch:
+    image: opensearchproject/opensearch:2.13.0
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+
+  catalog-service:
+    build: ../services/catalog-service
+    environment:
+      CATALOG_DB_URL: jdbc:postgresql://catalog-db:5432/catalog
+      CATALOG_DB_USER: catalog
+      CATALOG_DB_PASSWORD: catalog
+    ports:
+      - "8080:8080"
+    depends_on:
+      - catalog-db
+
+  pricing-service:
+    build: ../services/pricing-service
+    environment:
+      PRICING_DB_URL: jdbc:postgresql://pricing-db:5432/pricing
+      PRICING_DB_USER: pricing
+      PRICING_DB_PASSWORD: pricing
+    ports:
+      - "8081:8081"
+    depends_on:
+      - pricing-db
+
+  inventory-service:
+    build: ../services/inventory-service
+    environment:
+      INVENTORY_DB_URL: jdbc:postgresql://inventory-db:5432/inventory
+      INVENTORY_DB_USER: inventory
+      INVENTORY_DB_PASSWORD: inventory
+      RABBIT_HOST: rabbitmq
+      RABBIT_USER: guest
+      RABBIT_PASSWORD: guest
+    ports:
+      - "8082:8082"
+    depends_on:
+      - inventory-db
+      - rabbitmq
+
+  order-service:
+    build: ../services/order-service
+    environment:
+      ORDER_DB_URL: jdbc:postgresql://order-db:5432/orders
+      ORDER_DB_USER: orders
+      ORDER_DB_PASSWORD: orders
+      RABBIT_HOST: rabbitmq
+      RABBIT_USER: guest
+      RABBIT_PASSWORD: guest
+    ports:
+      - "8083:8083"
+    depends_on:
+      - order-db
+      - rabbitmq
+
+  frontend:
+    build: ../frontend
+    environment:
+      CATALOG_SERVICE_INTERNAL_URL: http://catalog-service:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - catalog-service
+
+volumes:
+  catalog-data:
+  pricing-data:
+  inventory-data:
+  order-data:
