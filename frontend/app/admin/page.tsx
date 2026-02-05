@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/components/auth-context";
-import { Category, getAllProducts, getCategories, Product } from "@/lib/api";
+import { Category, Product } from "@/lib/api";
 
 const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
@@ -17,6 +17,7 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<EditableProduct[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [errorMessage, setErrorMessage] = useState("");
   const [newCategory, setNewCategory] = useState({ name: "", slug: "", description: "" });
   const [newProduct, setNewProduct] = useState({
     category: "",
@@ -31,10 +32,7 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-    Promise.all([getCategories(), getAllProducts()]).then(([categoryData, productData]) => {
-      setCategories(categoryData);
-      setProducts(productData);
-    });
+    refreshData();
   }, []);
 
   const productsByCategory = useMemo(() => {
@@ -44,10 +42,34 @@ export default function AdminPage() {
     }, {});
   }, [categories, products]);
 
+  const fetchAdminJson = async <T,>(path: string, options?: RequestInit): Promise<T> => {
+    const response = await fetch(`${apiBase}${path}`, {
+      cache: "no-store",
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options?.headers ?? {})
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.status}`);
+    }
+    return (await response.json()) as T;
+  };
+
   const refreshData = async () => {
-    const [categoryData, productData] = await Promise.all([getCategories(), getAllProducts()]);
-    setCategories(categoryData);
-    setProducts(productData);
+    try {
+      setErrorMessage("");
+      const [categoryData, productData] = await Promise.all([
+        fetchAdminJson<Category[]>("/api/categories"),
+        fetchAdminJson<Product[]>("/api/products")
+      ]);
+      setCategories(categoryData);
+      setProducts(productData);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to load catalog data.";
+      setErrorMessage(message);
+    }
   };
 
   if (!user || user.role !== "admin") {
@@ -72,6 +94,11 @@ export default function AdminPage() {
       <div className="card-surface p-8">
         <h1 className="text-3xl font-semibold">Admin Console</h1>
         <p className="mt-2 text-white/70">Manage categories, products, imagery, and stock.</p>
+        {errorMessage && (
+          <p className="mt-4 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+            {errorMessage}
+          </p>
+        )}
       </div>
 
       <div className="card-surface p-6">
@@ -107,13 +134,18 @@ export default function AdminPage() {
             if (!newCategory.name || !newCategory.slug || !newCategory.description) {
               return;
             }
-            await fetch(`${apiBase}/api/categories`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(newCategory)
-            });
-            setNewCategory({ name: "", slug: "", description: "" });
-            await refreshData();
+            try {
+              setErrorMessage("");
+              await fetchAdminJson<Category>("/api/categories", {
+                method: "POST",
+                body: JSON.stringify(newCategory)
+              });
+              setNewCategory({ name: "", slug: "", description: "" });
+              await refreshData();
+            } catch (error) {
+              const message = error instanceof Error ? error.message : "Unable to create category.";
+              setErrorMessage(message);
+            }
           }}
           className="mt-4 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-950"
         >
@@ -166,6 +198,8 @@ export default function AdminPage() {
           <label className="text-sm text-white/60">
             Price
             <input
+              type="number"
+              min="0"
               value={newProduct.price}
               onChange={(event) => setNewProduct({ ...newProduct, price: event.target.value })}
               className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
@@ -218,30 +252,35 @@ export default function AdminPage() {
             ) {
               return;
             }
-            await fetch(`${apiBase}/api/products`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                ...newProduct,
-                price: Number(newProduct.price) || 0,
-                imageUrl: newProduct.imageUrl || "",
-                summary: newProduct.summary || "",
-                ebike: newProduct.ebike,
-                featured: newProduct.featured
-              })
-            });
-            setNewProduct({
-              category: "",
-              name: "",
-              sku: "",
-              tier: "",
-              price: "",
-              imageUrl: "",
-              summary: "",
-              ebike: false,
-              featured: false
-            });
-            await refreshData();
+            try {
+              setErrorMessage("");
+              await fetchAdminJson<Product>("/api/products", {
+                method: "POST",
+                body: JSON.stringify({
+                  ...newProduct,
+                  price: Number(newProduct.price) || 0,
+                  imageUrl: newProduct.imageUrl || "",
+                  summary: newProduct.summary || "",
+                  ebike: newProduct.ebike,
+                  featured: newProduct.featured
+                })
+              });
+              setNewProduct({
+                category: "",
+                name: "",
+                sku: "",
+                tier: "",
+                price: "",
+                imageUrl: "",
+                summary: "",
+                ebike: false,
+                featured: false
+              });
+              await refreshData();
+            } catch (error) {
+              const message = error instanceof Error ? error.message : "Unable to create product.";
+              setErrorMessage(message);
+            }
           }}
           className="mt-4 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-950"
         >
@@ -316,6 +355,8 @@ export default function AdminPage() {
                         <label className="text-sm text-white/60">
                           Price
                           <input
+                            type="number"
+                            min="0"
                             value={product.price}
                             onChange={(event) =>
                               setProducts((prev) =>
@@ -391,22 +432,29 @@ export default function AdminPage() {
                     </div>
                     <button
                       onClick={async () => {
-                        await fetch(`${apiBase}/api/products/${product.id}`, {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            sku: product.sku,
-                            name: product.name,
-                            category: product.category,
-                            tier: product.tier,
-                            price: product.price,
-                            imageUrl: product.imageUrl,
-                            summary: product.summary,
-                            ebike: product.ebike,
-                            featured: product.featured
-                          })
-                        });
-                        await refreshData();
+                        try {
+                          setErrorMessage("");
+                          const updated = await fetchAdminJson<Product>(`/api/products/${product.id}`, {
+                            method: "PUT",
+                            body: JSON.stringify({
+                              sku: product.sku,
+                              name: product.name,
+                              category: product.category,
+                              tier: product.tier,
+                              price: product.price,
+                              imageUrl: product.imageUrl,
+                              summary: product.summary,
+                              ebike: product.ebike,
+                              featured: product.featured
+                            })
+                          });
+                          setProducts((prev) =>
+                            prev.map((entry) => (entry.id === product.id ? { ...entry, ...updated } : entry))
+                          );
+                        } catch (error) {
+                          const message = error instanceof Error ? error.message : "Unable to update product.";
+                          setErrorMessage(message);
+                        }
                       }}
                       className="mt-4 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-950"
                     >
