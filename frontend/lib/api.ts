@@ -19,6 +19,41 @@ export type Category = {
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
+function buildProductImage(product: Product) {
+  const hue = Math.abs(
+    Array.from(product.sku).reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360
+  );
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="hsl(${hue}, 70%, 35%)"/>
+      <stop offset="100%" stop-color="hsl(${(hue + 40) % 360}, 80%, 55%)"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <g fill="rgba(255,255,255,0.12)">
+    <circle cx="120" cy="120" r="80"/>
+    <circle cx="680" cy="140" r="90"/>
+    <circle cx="650" cy="470" r="110"/>
+  </g>
+  <text x="60" y="340" font-family="Arial, sans-serif" font-size="28" fill="white" opacity="0.8">
+    ${product.name}
+  </text>
+  <text x="60" y="380" font-family="Arial, sans-serif" font-size="18" fill="white" opacity="0.7">
+    ${product.tier} • ${product.category.toUpperCase()}
+  </text>
+</svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function withLocalImage(products: Product[]) {
+  return products.map((product) => ({
+    ...product,
+    imageUrl: buildProductImage(product)
+  }));
+}
+
 const fallbackCategories: Category[] = [
   {
     id: 1,
@@ -122,21 +157,24 @@ export function getCategories() {
 }
 
 export function getFeaturedProducts() {
-  return fetchJson<Product[]>("/api/products?featured=true", fallbackProducts);
+  return fetchJson<Product[]>("/api/products?featured=true", fallbackProducts).then(withLocalImage);
 }
 
 export function getAllProducts() {
-  return fetchJson<Product[]>("/api/products", fallbackProducts);
+  return fetchJson<Product[]>("/api/products", fallbackProducts).then(withLocalImage);
 }
 
 export function getCategoryProducts(slug: string) {
   return fetchJson<Product[]>(
     `/api/products?category=${slug}`,
     fallbackProducts.filter((product) => product.category === slug)
-  );
+  ).then(withLocalImage);
 }
 
 export function getProduct(id: string) {
   const fallback = fallbackProducts.find((product) => product.id === Number(id)) ?? fallbackProducts[0];
-  return fetchJson<Product>(`/api/products/${id}`, fallback);
+  return fetchJson<Product>(`/api/products/${id}`, fallback).then((product) => ({
+    ...product,
+    imageUrl: buildProductImage(product)
+  }));
 }

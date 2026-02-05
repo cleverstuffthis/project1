@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCart } from "@/components/cart-context";
 
@@ -17,6 +18,8 @@ export default function SiteHeader() {
   const { user, logout } = useAuth();
   const { items } = useCart();
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
@@ -32,55 +35,69 @@ export default function SiteHeader() {
         </nav>
         <div className="flex items-center gap-3 text-sm">
           {user ? (
-            <div className="group relative">
+            <div className="relative">
               <button
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/80 transition hover:border-white/40 hover:text-white"
                 aria-label="Account menu"
+                onClick={() => setAccountOpen((prev) => !prev)}
               >
                 <span className="text-base">👤</span>
               </button>
-              <div className="invisible absolute right-0 mt-3 w-40 translate-y-2 rounded-2xl border border-white/10 bg-slate-950/95 p-2 text-xs text-white/70 opacity-0 shadow-xl transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-                <Link href="/account" className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white">
-                  Account
-                </Link>
-                {user.role === "admin" && (
-                  <Link href="/admin" className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white">
-                    Admin Console
+              {accountOpen && (
+                <div className="absolute right-0 mt-3 w-44 rounded-2xl border border-white/10 bg-slate-950/95 p-2 text-xs text-white/70 shadow-xl">
+                  <Link href="/account" className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white">
+                    Account
                   </Link>
-                )}
-                <button
-                  onClick={logout}
-                  className="w-full rounded-xl px-3 py-2 text-left hover:bg-white/10 hover:text-white"
-                >
-                  Sign out
-                </button>
-              </div>
+                  {user.role === "admin" && (
+                    <Link href="/admin" className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white">
+                      Admin Console
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      logout();
+                      setAccountOpen(false);
+                    }}
+                    className="w-full rounded-xl px-3 py-2 text-left hover:bg-white/10 hover:text-white"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="group relative">
-              <button className="rounded-full border border-white/10 px-4 py-2 text-white/80 transition hover:border-white/30 hover:text-white">
+            <div className="relative">
+              <button
+                className="rounded-full border border-white/10 px-4 py-2 text-white/80 transition hover:border-white/30 hover:text-white"
+                onClick={() => setLoginOpen((prev) => !prev)}
+              >
                 Login
               </button>
-              <div className="invisible absolute right-0 mt-3 w-48 translate-y-2 rounded-2xl border border-white/10 bg-slate-950/95 p-2 text-xs text-white/70 opacity-0 shadow-xl transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-                <Link
-                  href="/account?role=user"
-                  className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white"
-                >
-                  Login as user
-                </Link>
-                <Link
-                  href="/account?role=admin"
-                  className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white"
-                >
-                  Login as admin
-                </Link>
-                <Link
-                  href="/account?mode=register"
-                  className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white"
-                >
-                  Create account
-                </Link>
-              </div>
+              {loginOpen && (
+                <div className="absolute right-0 mt-3 w-48 rounded-2xl border border-white/10 bg-slate-950/95 p-2 text-xs text-white/70 shadow-xl">
+                  <Link
+                    href="/account?role=user"
+                    className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white"
+                    onClick={() => setLoginOpen(false)}
+                  >
+                    Login as user
+                  </Link>
+                  <Link
+                    href="/account?role=admin"
+                    className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white"
+                    onClick={() => setLoginOpen(false)}
+                  >
+                    Login as admin
+                  </Link>
+                  <Link
+                    href="/account?mode=register"
+                    className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white"
+                    onClick={() => setLoginOpen(false)}
+                  >
+                    Create account
+                  </Link>
+                </div>
+              )}
             </div>
           )}
           <Link

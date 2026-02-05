@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import AddToCartButton from "@/components/add-to-cart-button";
+import ProductPurchasePanel from "@/components/product-purchase-panel";
 import { getProduct } from "@/lib/api";
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
@@ -18,24 +18,13 @@ export default async function ProductPage({ params }: { params: { id: string } }
             <h1 className="mt-2 text-3xl font-semibold">{product.name}</h1>
             <p className="mt-4 text-white/70">{product.summary}</p>
           </div>
-          <div className="card-surface p-6">
-            <div className="flex items-center justify-between text-sm text-white/60">
-              <span>Tier</span>
-              <span>{product.tier}</span>
-            </div>
-            <div className="mt-3 flex items-center justify-between text-sm text-white/60">
-              <span>Drive</span>
-              <span>{product.ebike ? "e-MTB" : "Mechanical"}</span>
-            </div>
-            <div className="mt-3 flex items-center justify-between text-sm text-white/60">
-              <span>SKU</span>
-              <span>{product.sku}</span>
-            </div>
-            <div className="mt-6 flex items-center justify-between">
-              <span className="text-2xl font-semibold">${product.price.toLocaleString()}</span>
-              <AddToCartButton id={product.id} sku={product.sku} name={product.name} price={product.price} />
-            </div>
-          </div>
+          <ProductPurchasePanel
+            id={product.id}
+            sku={product.sku}
+            name={product.name}
+            price={product.price}
+            category={product.category}
+          />
           <div className="card-surface p-6 text-sm text-white/70">
             <p>Includes shock tuning, suspension setup, and 30-day ride lab follow-up.</p>
             <div className="mt-4 flex flex-wrap gap-4 text-xs uppercase tracking-[0.3em] text-white/50">

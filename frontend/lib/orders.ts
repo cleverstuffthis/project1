@@ -3,7 +3,7 @@ export type Order = {
   username: string;
   total: number;
   createdAt: string;
-  items: Array<{ sku: string; name: string; quantity: number; price: number }>;
+  items: Array<{ sku: string; name: string; quantity: number; price: number; size?: string }>;
 };
 
 const ORDERS_KEY = "summit-ride-orders";

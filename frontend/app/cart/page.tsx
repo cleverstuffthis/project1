@@ -37,32 +37,34 @@ export default function CartPage() {
             </div>
             <div className="mt-4 flex flex-col gap-4">
               {items.map((item) => (
-                <div key={item.sku} className="flex flex-col gap-3 rounded-xl border border-white/10 p-4">
+                <div key={item.lineId} className="flex flex-col gap-3 rounded-xl border border-white/10 p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-white">{item.name}</p>
-                      <p className="text-xs text-white/60">SKU {item.sku}</p>
+                      <p className="text-xs text-white/60">
+                        SKU {item.sku} · Size {item.size}
+                      </p>
                     </div>
                     <span className="text-sm font-semibold text-white">${item.price.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-white/60">
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => updateQuantity(item.sku, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.lineId, item.quantity - 1)}
                         className="rounded-full border border-white/15 px-3 py-1 text-white/70 hover:border-white/40 hover:text-white"
                       >
                         -
                       </button>
                       <span className="text-sm text-white">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.sku, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.lineId, item.quantity + 1)}
                         className="rounded-full border border-white/15 px-3 py-1 text-white/70 hover:border-white/40 hover:text-white"
                       >
                         +
                       </button>
                     </div>
                     <button
-                      onClick={() => removeItem(item.sku)}
+                      onClick={() => removeItem(item.lineId)}
                       className="rounded-full border border-white/10 px-3 py-1 text-white/70 hover:border-white/40 hover:text-white"
                     >
                       Remove

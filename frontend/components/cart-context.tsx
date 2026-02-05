@@ -5,16 +5,18 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 export type CartItem = {
   id: number;
   sku: string;
+  lineId: string;
   name: string;
   price: number;
   quantity: number;
+  size: string;
 };
 
 type CartContextValue = {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, "quantity">) => void;
-  removeItem: (sku: string) => void;
-  updateQuantity: (sku: string, quantity: number) => void;
+  addItem: (item: Omit<CartItem, "quantity" | "lineId">) => void;
+  removeItem: (lineId: string) => void;
+  updateQuantity: (lineId: string, quantity: number) => void;
   clear: () => void;
 };
 
@@ -47,22 +49,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       items,
       addItem: (item) => {
         setItems((prev) => {
-          const existing = prev.find((entry) => entry.sku === item.sku);
+          const lineId = `${item.sku}-${item.size}`;
+          const existing = prev.find((entry) => entry.lineId === lineId);
           if (existing) {
             return prev.map((entry) =>
-              entry.sku === item.sku ? { ...entry, quantity: entry.quantity + 1 } : entry
+              entry.lineId === lineId ? { ...entry, quantity: entry.quantity + 1 } : entry
             );
           }
-          return [...prev, { ...item, quantity: 1 }];
+          return [...prev, { ...item, lineId, quantity: 1 }];
         });
       },
-      removeItem: (sku) => {
-        setItems((prev) => prev.filter((entry) => entry.sku !== sku));
+      removeItem: (lineId) => {
+        setItems((prev) => prev.filter((entry) => entry.lineId !== lineId));
       },
-      updateQuantity: (sku, quantity) => {
+      updateQuantity: (lineId, quantity) => {
         setItems((prev) =>
           prev
-            .map((entry) => (entry.sku === sku ? { ...entry, quantity } : entry))
+            .map((entry) => (entry.lineId === lineId ? { ...entry, quantity } : entry))
             .filter((entry) => entry.quantity > 0)
         );
       },

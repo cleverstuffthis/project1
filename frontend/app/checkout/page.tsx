@@ -93,11 +93,16 @@ export default function CheckoutPage() {
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="text-sm text-white/60">
               Card type
-              <input
+              <select
                 value={payment.cardType}
                 onChange={(event) => setPayment({ ...payment, cardType: event.target.value })}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
-              />
+              >
+                <option value="">Select card</option>
+                <option value="visa">Visa</option>
+                <option value="mastercard">Mastercard</option>
+                <option value="american-express">American Express</option>
+              </select>
             </label>
             <label className="text-sm text-white/60">
               Card number
@@ -118,6 +123,7 @@ export default function CheckoutPage() {
             <label className="text-sm text-white/60">
               CVV
               <input
+                type="password"
                 value={payment.cvv}
                 onChange={(event) => setPayment({ ...payment, cvv: event.target.value })}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white"
@@ -167,7 +173,8 @@ export default function CheckoutPage() {
                 sku: item.sku,
                 name: item.name,
                 quantity: item.quantity,
-                price: item.price
+                price: item.price,
+                size: item.size
               }))
             });
             clear();
