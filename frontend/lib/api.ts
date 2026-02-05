@@ -125,6 +125,10 @@ export function getFeaturedProducts() {
   return fetchJson<Product[]>("/api/products?featured=true", fallbackProducts);
 }
 
+export function getAllProducts() {
+  return fetchJson<Product[]>("/api/products", fallbackProducts);
+}
+
 export function getCategoryProducts(slug: string) {
   return fetchJson<Product[]>(
     `/api/products?category=${slug}`,

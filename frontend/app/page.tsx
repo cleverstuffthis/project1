@@ -12,7 +12,7 @@ export default async function HomePage() {
     <div className="flex flex-col gap-16">
       <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="flex flex-col gap-6">
-          <p className="text-sm uppercase tracking-[0.5em] text-white/60">Enduro 2026 Reference Storefront</p>
+          <p className="text-sm uppercase tracking-[0.5em] text-white/60">Enduro champions 2026</p>
           <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
             Hyper-modern bikes, gear, and service for the riders who chase the last light.
           </h1>
@@ -27,24 +27,6 @@ export default async function HomePage() {
             >
               Shop Enduro Bikes
             </Link>
-            <Link
-              href="/admin"
-              className="rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white/80 transition hover:border-white/60 hover:text-white"
-            >
-              Admin Console
-            </Link>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              { title: "48-hour build", value: "98%" },
-              { title: "Live stock accuracy", value: "99.6%" },
-              { title: "Carbon-neutral shipping", value: "Global" }
-            ].map((stat) => (
-              <div key={stat.title} className="card-surface p-4">
-                <p className="text-sm text-white/60">{stat.title}</p>
-                <p className="text-2xl font-semibold text-white">{stat.value}</p>
-              </div>
-            ))}
           </div>
         </div>
         <div className="card-surface relative min-h-[320px] overflow-hidden p-6">
@@ -71,7 +53,7 @@ export default async function HomePage() {
       <section className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold">Shop by category</h2>
-          <Link href="/category/enduro" className="text-sm text-white/60 transition hover:text-white">
+          <Link href="/category" className="text-sm text-white/60 transition hover:text-white">
             View all categories
           </Link>
         </div>
