@@ -19,7 +19,6 @@ export type Category = {
 };
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
-const ADMIN_DATA_KEY = "summit-ride-admin-data";
 
 function buildProductImage(product: Product) {
   const hue = Math.abs(
@@ -87,26 +86,6 @@ function withLocalImage(products: Product[]) {
     ...product,
     imageUrl: product.imageUrl?.trim() ? product.imageUrl : buildProductImage(product)
   }));
-}
-
-function applyAdminOverrides(products: Product[]) {
-  if (typeof window === "undefined") {
-    return products;
-  }
-  const stored = window.localStorage.getItem(ADMIN_DATA_KEY);
-  if (!stored) {
-    return products;
-  }
-  try {
-    const adminData = JSON.parse(stored) as { products?: Record<string, Partial<Product>> };
-    const overrides = adminData.products ?? {};
-    return products.map((product) => ({
-      ...product,
-      ...overrides[product.sku]
-    }));
-  } catch {
-    return products;
-  }
 }
 
 const fallbackCategories: Category[] = [
@@ -217,13 +196,11 @@ export function getCategories() {
 
 export function getFeaturedProducts() {
   return fetchJson<Product[]>("/api/products?featured=true", fallbackProducts)
-    .then(applyAdminOverrides)
     .then(withLocalImage);
 }
 
 export function getAllProducts() {
   return fetchJson<Product[]>("/api/products", fallbackProducts)
-    .then(applyAdminOverrides)
     .then(withLocalImage);
 }
 
@@ -232,17 +209,15 @@ export function getCategoryProducts(slug: string) {
     `/api/products?category=${slug}`,
     fallbackProducts.filter((product) => product.category === slug)
   )
-    .then(applyAdminOverrides)
     .then(withLocalImage);
 }
 
 export function getProduct(id: string) {
   const fallback = fallbackProducts.find((product) => product.id === Number(id)) ?? fallbackProducts[0];
   return fetchJson<Product>(`/api/products/${id}`, fallback).then((product) => {
-    const [override] = applyAdminOverrides([product]);
     return {
-      ...override,
-      imageUrl: override.imageUrl?.trim() ? override.imageUrl : buildProductImage(override)
+      ...product,
+      imageUrl: product.imageUrl?.trim() ? product.imageUrl : buildProductImage(product)
     };
   });
 }
