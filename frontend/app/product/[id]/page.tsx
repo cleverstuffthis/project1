@@ -44,9 +44,6 @@ export default async function ProductPage({ params }: { params: { id: string } }
               <span>Priority support</span>
             </div>
           </div>
-          <Link href="/checkout" className="text-sm text-white/60 transition hover:text-white">
-            Proceed to checkout →
-          </Link>
         </div>
       </div>
 

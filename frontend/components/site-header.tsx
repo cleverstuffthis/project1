@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "@/components/auth-context";
 import { useCart } from "@/components/cart-context";
 
 const navLinks = [
@@ -12,9 +13,8 @@ const navLinks = [
   { href: "/category/gear", label: "Gear" }
 ];
 
-const isLoggedIn = false;
-
 export default function SiteHeader() {
+  const { user, logout } = useAuth();
   const { items } = useCart();
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   return (
@@ -31,7 +31,7 @@ export default function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-3 text-sm">
-          {isLoggedIn ? (
+          {user ? (
             <div className="group relative">
               <button
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/80 transition hover:border-white/40 hover:text-white"
@@ -43,21 +43,45 @@ export default function SiteHeader() {
                 <Link href="/account" className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white">
                   Account
                 </Link>
-                <Link href="/admin" className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white">
-                  Admin
-                </Link>
-                <button className="w-full rounded-xl px-3 py-2 text-left hover:bg-white/10 hover:text-white">
+                {user.role === "admin" && (
+                  <Link href="/admin" className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white">
+                    Admin Console
+                  </Link>
+                )}
+                <button
+                  onClick={logout}
+                  className="w-full rounded-xl px-3 py-2 text-left hover:bg-white/10 hover:text-white"
+                >
                   Sign out
                 </button>
               </div>
             </div>
           ) : (
-            <Link
-              href="/account"
-              className="rounded-full border border-white/10 px-4 py-2 text-white/80 transition hover:border-white/30 hover:text-white"
-            >
-              Login
-            </Link>
+            <div className="group relative">
+              <button className="rounded-full border border-white/10 px-4 py-2 text-white/80 transition hover:border-white/30 hover:text-white">
+                Login
+              </button>
+              <div className="invisible absolute right-0 mt-3 w-48 translate-y-2 rounded-2xl border border-white/10 bg-slate-950/95 p-2 text-xs text-white/70 opacity-0 shadow-xl transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+                <Link
+                  href="/account?role=user"
+                  className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white"
+                >
+                  Login as user
+                </Link>
+                <Link
+                  href="/account?role=admin"
+                  className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white"
+                >
+                  Login as admin
+                </Link>
+                <Link
+                  href="/account?mode=register"
+                  className="block rounded-xl px-3 py-2 hover:bg-white/10 hover:text-white"
+                >
+                  Create account
+                </Link>
+              </div>
+            </div>
           )}
           <Link
             href="/cart"

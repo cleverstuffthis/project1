@@ -88,9 +88,12 @@ export default function CartPage() {
                 <span>${subtotal.toLocaleString()}</span>
               </div>
             </div>
-            <button className="mt-6 w-full rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:shadow-glow">
+            <Link
+              href="/checkout"
+              className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:shadow-glow"
+            >
               Continue to checkout
-            </button>
+            </Link>
           </div>
         </div>
       )}
