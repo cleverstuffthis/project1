@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   catalog-db:
-    image: postgres:16
+    image: postgres:15
     environment:
       POSTGRES_DB: catalog
       POSTGRES_USER: catalog
@@ -13,7 +13,7 @@ services:
       - catalog-data:/var/lib/postgresql/data
 
   pricing-db:
-    image: postgres:16
+    image: postgres:15
     environment:
       POSTGRES_DB: pricing
       POSTGRES_USER: pricing
@@ -24,7 +24,7 @@ services:
       - pricing-data:/var/lib/postgresql/data
 
   inventory-db:
-    image: postgres:16
+    image: postgres:15
     environment:
       POSTGRES_DB: inventory
       POSTGRES_USER: inventory
@@ -35,7 +35,7 @@ services:
       - inventory-data:/var/lib/postgresql/data
 
   order-db:
-    image: postgres:16
+    image: postgres:15
     environment:
       POSTGRES_DB: orders
       POSTGRES_USER: orders
