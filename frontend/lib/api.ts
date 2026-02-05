@@ -175,6 +175,6 @@ export function getProduct(id: string) {
   const fallback = fallbackProducts.find((product) => product.id === Number(id)) ?? fallbackProducts[0];
   return fetchJson<Product>(`/api/products/${id}`, fallback).then((product) => ({
     ...product,
-    imageUrl: buildProductImage(product)
+    imageUrl: product.imageUrl.startsWith("http") ? product.imageUrl : buildProductImage(product)
   }));
 }

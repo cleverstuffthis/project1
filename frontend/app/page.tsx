@@ -31,8 +31,8 @@ export default async function HomePage() {
         </div>
         <div className="card-surface relative min-h-[320px] overflow-hidden p-6">
           <Image
-            src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
-            alt="Enduro rider at sunset"
+            src="https://images.unsplash.com/photo-1508973378893-5e012c2f8e77?auto=format&fit=crop&w=1400&q=80"
+            alt="Enduro rider sending a sunset mountain drop"
             fill
             className="object-cover"
             priority

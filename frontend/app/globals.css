@@ -10,6 +10,11 @@ body {
   @apply bg-slate-950 text-white antialiased;
 }
 
+select,
+option {
+  @apply bg-slate-950 text-white;
+}
+
 .gradient-text {
   @apply bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 bg-clip-text text-transparent;
 }

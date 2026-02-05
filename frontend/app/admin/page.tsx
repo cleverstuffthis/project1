@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useAuth } from "@/components/auth-context";
 
 const adminSections = [
   { title: "Products", description: "Create and manage bikes, components, and gear.", href: "/admin/products" },
@@ -10,6 +13,23 @@ const adminSections = [
 ];
 
 export default function AdminPage() {
+  const { user } = useAuth();
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="flex flex-col gap-8">
+        <div className="card-surface p-8">
+          <h1 className="text-3xl font-semibold">Admin Console</h1>
+          <p className="mt-2 text-white/70">Admin access required. Login with admin/admin to continue.</p>
+        </div>
+        <Link
+          href="/account?role=admin"
+          className="inline-flex rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:shadow-glow"
+        >
+          Login as admin
+        </Link>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-8">
       <div className="card-surface p-8">
