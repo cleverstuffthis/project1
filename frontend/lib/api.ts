@@ -19,8 +19,11 @@ export type Category = {
 };
 
 const baseUrl =
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  (typeof window !== "undefined" ? "" : "http://localhost:8080");
+  typeof window === "undefined"
+    ? process.env.CATALOG_SERVICE_INTERNAL_URL ??
+      process.env.NEXT_PUBLIC_API_BASE_URL ??
+      "http://localhost:8080"
+    : "";
 
 function buildProductImage(product: Product) {
   const hue = Math.abs(
