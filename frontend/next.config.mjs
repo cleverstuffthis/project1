@@ -9,10 +9,11 @@ const nextConfig = {
     ]
   },
   async rewrites() {
+    const catalogBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://catalog-service:8080";
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:8080/api/:path*"
+        destination: `${catalogBase}/api/:path*`
       }
     ];
   }
